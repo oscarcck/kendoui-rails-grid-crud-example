@@ -71,36 +71,53 @@ $(document).ready(function() {
       // }
   });
 
+  var crudSrvBaseUrl = "/weapons";
   var dataSource = new kendo.data.DataSource({
     transport: {
       read: {
-        url: "/weapons.json"
+        url: "/weapons",
+        // url: crudSrvBaseUrl,
+        dataType: "json",
       },
       create: {
-        url: "/weapons.json",
+        url: "/weapons",
+        // url: crudSrvBaseUrl,
+        dataType: "json",
+        contentType: "application/json", //for kendo.stringify() / JSON.stringify()
         type: "POST"
       },
       update: {
+        // url: function(data) {
+        //        return crudSrvBaseUrl + "/" + data.id;
+        //      },
+        dataType: "json",
+        contentType: "application/json", //for kendo.stringify() / JSON.stringify()
         type: "PUT"
       },
       destroy: {
+        // url: function(data) {
+        //        return crudSrvBaseUrl + "/" + data.id;
+        //      },
+        dataType: "json",
         type: "DELETE"
       },
       parameterMap: function(data, type) {
          if (type !== "read" && data) {
              // console.log(type);
              // console.log(data);
-             // console.log(data.models); //use with batch: true
-             // k_data = {weapon: kendo.stringify(data)};
-             r_data = {weapon: data};
+             // console.log(data.models); //use with batch: true, need modify rails controller to handle array
+             // r_data = {weapon: data};
+             r_data = kendo.stringify({weapon: data});
+             // for create, will POST { "weapon": {"name":"new", "description":"new desc", "id":""} }
              if (type === "update") {
-              r_data = {weapon: { name: data.name, description: data.description, id: data.id} };
+              // r_data = {weapon: { name: data.name, description: data.description, id: data.id} };
+              r_data = kendo.stringify({weapon: { name: data.name, description: data.description, id: data.id} });
+              // for update, will PUT { "weapon": {"name":"old", "description":"XYZ 123", "id":"1"} }
              }
              // if (type === "destroy") {
-             //  fdata = {weapon: {id: data.id} };
+             //  r_data = {weapon: {id: data.id} };
              // }
-             // console.log("k_data: "+kendo.stringify(k_data));
-             // console.log("r_data: "+kendo.stringify(r_data));
+             // console.log("r_data: "+r_data);
              return r_data;
          }
          return data;
@@ -131,7 +148,7 @@ $(document).ready(function() {
       // console.log(selectedWeapon);
       // console.log(id);
 
-      this.dataSource.options.transport.destroy.url = "weapons/" + id +".json";
+      this.dataSource.options.transport.destroy.url = "weapons/" + id +".json";  //can be replaced by the inline url function inside ds transport
       this.dataSource.options.transport.update.url = "weapons/" + id +".json";
 
       $("#change-name").val(selectedWeapon.get("name"));
