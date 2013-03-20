@@ -1,0 +1,166 @@
+<div class="header">
+  <h1>Kendo UI DataSource</h1>
+</div>
+
+<div id="wrapper">
+  <div id="splitter">
+    <div id="left">
+      <div class="inner">
+        <h3>Create</h3>
+        <dl>
+          <dt>Name:</dt>
+          <dd><input type="text" id="create-name"></dd>
+          <dt>Description:</dt>
+          <dd><textarea name="" id="create-description" cols="20" rows="5"></textarea></dd>
+          <dd><button id="create-weapon">Create</button></dd>
+        </dl>
+      </div>
+    </div>
+    <div id="middle">
+      <div id="right-top">
+        <div class="inner">
+          <div id="grid">
+            <table id="weapons">
+              <tr>
+                <th data-field="name">Name</th>
+                <th data-field="description">Description</th>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="right">
+      <h3>Edit</h3>
+        <dl>
+          <dt>Name:</dt>
+          <dd><input type="text" id="change-name"></dd>
+          <dt>Description:</dt>
+          <dd><textarea name="" id="change-description" cols="20" rows="5"></textarea></dd>
+          <dd><span><button id="update-weapon">Update</button><button id="delete-weapon">Delete</button></span></dd>
+        </dl>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+
+  // make splitter
+  $("#splitter").kendoSplitter({
+      panes: [
+          { collapsible: false, size: "250px"  },
+          { collapsible: false },
+          { collapsible: false, size: "250px" }
+      ]
+  });
+  // end make splitter
+
+  var Weapon = kendo.data.Model.define( {
+      id: "id", // the identifier of the model
+      // fields: {
+      //     name: {
+      //         type: "string",
+      //         validation: {
+      //           required: true
+      //         }
+      //     },
+      //     description: {
+      //         type: "string"
+      //     }
+      // }
+  });
+
+  var dataSource = new kendo.data.DataSource({
+    transport: {
+      read: {
+        url: "/weapons.json"
+      },
+      create: {
+        url: "/weapons.json",
+        type: "POST"
+      },
+      update: {
+        type: "PUT"
+      },
+      destroy: {
+        type: "DELETE"
+      },
+      parameterMap: function(data, type) {
+         if (type !== "read" && data) {
+             // console.log(type);
+             // console.log(data);
+             // console.log(data.models); //use with batch: true
+             // k_data = {weapon: kendo.stringify(data)};
+             r_data = {weapon: data};
+             if (type === "update") {
+              r_data = {weapon: { name: data.name, description: data.description, id: data.id} };
+             }
+             // if (type === "destroy") {
+             //  fdata = {weapon: {id: data.id} };
+             // }
+             // console.log("k_data: "+kendo.stringify(k_data));
+             // console.log("r_data: "+kendo.stringify(r_data));
+             return r_data;
+         }
+         return data;
+      }
+    },
+    // batch: true, //need to use data.models in parameterMap
+    schema: {
+      model: Weapon
+    }
+  });
+
+  var selectedWeapon;
+
+  $("#weapons").kendoGrid({
+    dataSource: dataSource,
+    selectable: true,
+    change: function() {
+      var selected = this.select();
+      // var id = this.select().data("id");
+      var uid = selected.data("uid");
+      // console.log(selected);
+      // console.log(selected.data("uid"));
+      // console.log(this.dataSource.getByUid(id).id);
+      // console.log(id);
+      // selectedWeapon = this.dataSource.get(id);
+      selectedWeapon = this.dataSource.getByUid(uid);
+      var id = selectedWeapon.id
+      // console.log(selectedWeapon);
+      // console.log(id);
+
+      this.dataSource.options.transport.destroy.url = "weapons/" + id +".json";
+      this.dataSource.options.transport.update.url = "weapons/" + id +".json";
+
+      $("#change-name").val(selectedWeapon.get("name"));
+      $("#change-description").val(selectedWeapon.get("description"));
+    }
+  });
+
+  $("#create-weapon").click(function() {
+    dataSource.add({ name: $("#create-name").val(), description: $("#create-description").val() });
+    dataSource.sync();
+    $("#create-name").val("");
+    $("#create-description").val("");
+    dataSource.read();
+  })
+
+  $("#update-weapon").click(function() {
+    selectedWeapon.set("name", $("#change-name").val());
+    selectedWeapon.set("description", $("#change-description").val());
+    dataSource.sync();
+    $("#change-name").val("");
+    $("#change-description").val("");
+  });
+
+  $("#delete-weapon").click(function() {
+    dataSource.remove(selectedWeapon);
+    dataSource.sync();
+    $("#change-name").val("");
+    $("#change-description").val("");
+  });
+
+});
+</script>
